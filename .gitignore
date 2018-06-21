@@ -1,0 +1,10 @@
+# Node and NPM
+node_modules
+
+# Build
+build
+
+# Config
+.env
+.token
+aircon.config.json
