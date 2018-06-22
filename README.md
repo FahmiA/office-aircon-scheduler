@@ -4,7 +4,7 @@ A NodeJS server which connects to an Office 365 calender and schedules the offic
 
 ## Configuration
 
-Create a .env file with your settings.
+Create a `.env` file with your settings.
 
 ```dosini
 # Outlook App config
@@ -17,6 +17,21 @@ MQTT_SERVER="URL:PORT"
 MQTT_USER=""
 MQTT_PASSWORD=""
 MQTT_CLIENT_ID="office-aircon-scheduler
+```
+
+Create a `aircon.config.json` file with your scheduling settings:
+
+```json
+{
+    "rooms": [
+        {
+            "name": "ROOM_NAME",
+            "email": "ROOM_EMAIL",
+            "airconId": "ID",
+            "disabled": false
+        }
+    ]
+}
 ```
 
 ## Build
