@@ -121,24 +121,42 @@ export class Scheduler {
     }
 
     private mergeBackToBackEvents() {
-        const sortedEvents = Array.from(this.events.values()).sort((event1, event2) => event1.start.getTime() - event2.start.getTime());
-        //console.log('sortedEvents', sortedEvents.map(ev => ev.start.toISOString()));
+        const sortedEvents = Array.from(this.events.values())
+            .sort((event1, event2) => event1.start.getTime() - event2.start.getTime());
 
         let i = 0;
         while(i < sortedEvents.length) {
             const startEvent = sortedEvents[i];
-            const endEventIndex = sortedEvents.slice(i).findIndex(ev => ev.start.getTime() > startEvent.end.getTime() + 300000);
+            const endEventIndex = sortedEvents.findIndex((ev, index) => {
+                return index > i && Math.abs(ev.start.getTime() - startEvent.end.getTime()) < 600000;
+            });
 
-            if(endEventIndex > i + 1) {
-                const infos = sortedEvents.slice(i - 1, endEventIndex).map(ev => this.getEventLogInfo(ev.entry, ev.instanceEntry));
+            if(endEventIndex > i) {
+                const backToBackEvents = sortedEvents.slice(i, endEventIndex);
+                const infos = backToBackEvents.map(ev => this.getEventLogInfo(ev.entry, ev.instanceEntry));
                 this.log.info({events: infos}, 'Found back-to-back events');
-            }
 
-            if(endEventIndex === -1) {
-                break;
-            }
+                for(const ev of backToBackEvents) {
+                    ev.startJob.cancel();
+                    ev.endJob.cancel();
+                }
 
-            i = endEventIndex;
+                backToBackEvents[0].startJob.schedule(backToBackEvents[0].start);
+                backToBackEvents[backToBackEvents.length - 1].endJob.schedule(backToBackEvents[backToBackEvents.length - 1].end);
+
+                i = endEventIndex + 1;
+            } else {
+
+                if(startEvent.startJob.nextInvocation() == null) {
+                    startEvent.startJob.schedule(startEvent.start);
+                }
+
+                if(startEvent.endJob.nextInvocation() == null) {
+                    startEvent.endJob.schedule(startEvent.end);
+                }
+
+                i += 1;
+            }
         }
     }
 
@@ -174,14 +192,14 @@ export class Scheduler {
 
     private scheduleUnsupportedLocationEntry(entry:CalendarEntry, instanceEntry:CalendarEntryMaster, log:Log) {
         const scheduledEvent = this.events.get(entry.Id);
+        const loc = instanceEntry.Location != null ? instanceEntry.Location.DisplayName : null;
+
         if(scheduledEvent != null) {
             this.cancelScheduledEntry(entry.Id);
-
-            const loc = instanceEntry.Location != null ? instanceEntry.Location.DisplayName : null;
             log.info({loc},'Unscheduling event in unsupported locaton');
         }
 
-        log.info('Skipping event in unsupported locaton');
+        log.info({loc},'Skipping event in unsupported locaton');
     }
 
     private createEvent(entry:CalendarEntry, instanceEntry:CalendarEntryMaster, airconId:string, start:Date, end:Date, log:Log):ScheduledEvent {
@@ -204,8 +222,11 @@ export class Scheduler {
 
     private getAirconIdForEntry(entry:CalendarEntryMaster):string | null {
         for(const loc of entry.Locations) {
-            if(this.airconCtrls.has(loc.DisplayName)) {
-                return this.airconCtrls.get(loc.DisplayName);
+            const parts = loc.DisplayName.split('&').map(p => p.trim());
+            for(const part of parts) {
+                if(this.airconCtrls.has(part)) {
+                    return this.airconCtrls.get(part);
+                }
             }
         }
 
@@ -245,7 +266,7 @@ export class Scheduler {
         return {
             entry: entry.Id.substring(0, 10),
             instance: instance.Id.substring(0, 10),
-            subject: instance.Subject,
+            subject: instance.Subject.trim(),
             start: start.toLocaleDateString('en-GB', dateOptions),
             end: end.toLocaleDateString('en-GB', dateOptions),
             duration: `${durationMin}min`
