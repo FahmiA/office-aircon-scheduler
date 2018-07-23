@@ -78,7 +78,7 @@ export class Auth {
         const token_parts = idToken.split('.');
 
         // Token content is in the second part, in urlsafe base64
-        const encoded_token = new Buffer(token_parts[1].replace('-', '+').replace('_', '/'), 'base64');
+        const encoded_token = Buffer.from(token_parts[1].replace('-', '+').replace('_', '/'), 'base64');
 
         const decoded_token = encoded_token.toString();
 

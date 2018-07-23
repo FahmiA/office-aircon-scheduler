@@ -132,7 +132,7 @@ export class Scheduler {
             });
 
             if(endEventIndex > i) {
-                const backToBackEvents = sortedEvents.slice(i, endEventIndex);
+                const backToBackEvents = sortedEvents.slice(i, endEventIndex + 1);
                 const infos = backToBackEvents.map(ev => this.getEventLogInfo(ev.entry, ev.instanceEntry));
                 this.log.info({events: infos}, 'Found back-to-back events');
 
