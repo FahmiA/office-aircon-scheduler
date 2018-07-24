@@ -1,0 +1,22 @@
+# fahmia/office-aircon-scheduler:latest
+
+FROM alpine:latest as git
+
+RUN apk add --no-cache git
+RUN git clone https://github.com/FahmiA/office-aircon-scheduler.git ./app
+
+
+FROM resin/raspberry-pi-alpine-node:9-slim
+
+# Workaround until code parses calendar timezones
+RUN apk add --no-cache tzdata
+
+ENV HOME=/home/app
+WORKDIR $HOME/
+
+COPY --from=git app/* ./
+RUN yarn install && \
+    yarn run build && \
+    yarn install --production
+
+CMD [ "node", "build/index.js" ]
