@@ -127,9 +127,16 @@ export class Scheduler {
         let i = 0;
         while(i < sortedEvents.length) {
             const startEvent = sortedEvents[i];
-            const endEventIndex = sortedEvents.findIndex((ev, index) => {
-                return index > i && Math.abs(ev.start.getTime() - startEvent.end.getTime()) < 600000;
-            });
+            let endEventIndex = -1;
+            for(let j = i + 1; j < sortedEvents.length; j++) {
+                const ev = sortedEvents[j];
+                const lastEvent = sortedEvents[j - 1];
+                if(Math.abs(ev.start.getTime() - lastEvent.end.getTime()) < 600000) {
+                    endEventIndex = j;
+                } else {
+                    break;
+                }
+            }
 
             if(endEventIndex > i) {
                 const backToBackEvents = sortedEvents.slice(i, endEventIndex + 1);
