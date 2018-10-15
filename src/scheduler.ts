@@ -204,7 +204,11 @@ export class Scheduler {
 
     private createEvent(entry:CalendarEntry, instanceEntry:CalendarEntryMaster, airconId:string, start:Date, end:Date, log:Log):ScheduledEvent {
         const startJob = schedule.scheduleJob(start, () => this.powerOnAircon(airconId, log));
-        const endJob = schedule.scheduleJob(end, () => this.powerOffAircon(airconId, log));
+        const endJob = schedule.scheduleJob(end, () => {
+            this.powerOffAircon(airconId, log)
+            this.cancelScheduledEntry(entry.Id);
+        });
+
         const scheduledEvent = {
             id: entry.Id,
             entry,
