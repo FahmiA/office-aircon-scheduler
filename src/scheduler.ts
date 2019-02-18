@@ -296,11 +296,11 @@ export class Scheduler {
 
     private async powerOnAircon(airconId:string, log: Log) {
         log.info({power: 1, airconId}, 'Fire event');
-        this.mqttClient.publish(`aircon/${airconId}/power`, '1', {retain: MQTT_RETAIN});
+        this.mqttClient.publish(`homie/${airconId}/aircon/power/set`, 'on', {retain: MQTT_RETAIN});
     }
 
     private async powerOffAircon(airconId:string, log: Log) {
         log.info({power: 0, airconId}, 'Fire event');
-        this.mqttClient.publish(`aircon/${airconId}/power`, '0', {retain: MQTT_RETAIN});
+        this.mqttClient.publish(`homie/${airconId}/aircon/power/set`, 'off', {retain: MQTT_RETAIN});
     }
 }
